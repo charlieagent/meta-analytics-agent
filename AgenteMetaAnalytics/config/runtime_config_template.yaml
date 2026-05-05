@@ -1,0 +1,154 @@
+# Runtime Config — Livello 4 dell'architettura modulare
+# Template parametri tecnici dell'installazione operativa
+# 
+# IMPORTANTE: questo file NON viene caricato in Claude come prompt.
+# È configurazione del wrapper tecnico (n8n) che orchestra Claude + Meta API + Telegram.
+# Qui per completezza dell'architettura.
+#
+# Le credenziali sensibili (API token, ecc.) NON vanno qui in plaintext.
+# Usare un vault dedicato (n8n credential store) e referenziarle qui solo per nome.
+
+agent_owner:
+  name: "Claudio"
+  email_personale: "br1claud@gmail.com"
+
+active_client_profile: "frantoio_paparella"
+# Quando si vuole attivare un altro cliente: cambiare qui + caricare il client_profile.md corrispondente
+
+# ====================================
+# Account Meta gestito
+# ====================================
+meta_account:
+  business_manager_id: "<da configurare>"
+  ad_account_id: "<da configurare>"
+  pixel_id: "<da configurare>"
+  operational_timezone: "Europe/Rome"
+  account_timezone: "America/Los_Angeles"
+  timezone_gap_policy: "compensate_account_timezone_from_operational_timezone"
+  currency: "EUR"
+  # L'account Meta Frantoio e' configurato su America/Los_Angeles e va tenuto cosi'.
+  # L'agente ragiona sempre in Europe/Rome e il wrapper tecnico deve convertire
+  # le finestre temporali operative in query Meta con time_range esplicito.
+  
+  # Credenziali API: NON in chiaro qui. Usare vault.
+  api_credentials_vault_key: "frantoio_meta_api_token"
+
+# ====================================
+# Canali di comunicazione con Claudio
+# ====================================
+communication_channels:
+  telegram:
+    enabled: true
+    bot_token_vault_key: "claudio_telegram_bot_token"
+    chat_id: "<da configurare>"
+  
+  email:
+    enabled: true
+    address: "br1claud@gmail.com"
+    smtp_config_vault_key: "claudio_email_smtp"
+
+# ====================================
+# Pianificazione operativa (cron)
+# ====================================
+scheduled_tasks:
+  
+  daily_report:
+    description: "Report quotidiano stato campagne"
+    cron: "0 8 * * *"  # 08:00 ogni giorno
+    timezone: "Europe/Rome"
+  
+  weekly_industry_check:
+    description: "Industry update Meta/Andromeda"
+    cron: "30 7 * * 1"  # Lunedì 07:30
+    timezone: "Europe/Rome"
+  
+  profile_visits_automation:
+    description: "Check pool ad Profile Visits Instagram (Frantoio)"
+    cron: "0 9 * * 2,5"  # Martedì + Venerdì 09:00
+    timezone: "Europe/Rome"
+
+# ====================================
+# Parametri operativi
+# ====================================
+operational_settings:
+  
+  # Periodo di calibrazione iniziale per nuove automation
+  calibration_phase_days: 30
+  
+  # Frequenza di review delle automation attive
+  automation_review_days: 60
+  
+  # Periodo osservativo per nuovi funnel/clienti prima di alert dinamici
+  new_funnel_observation_days: 90
+  
+  # Limite alert rossi nel report quotidiano (oltre = anomalia sistemica)
+  max_red_alerts_per_report: 3
+
+# ====================================
+# Logging e monitoring (per debug)
+# ====================================
+logging:
+  level: "INFO"
+  retention_days: 90
+
+# ====================================
+# Versioning dei moduli caricati
+# ====================================
+loaded_modules:
+  core_agent_version: "v1.1"
+  analytical_framework_version: "v1.3"
+  client_profile_version: "v1.2"
+  benchmark_version: "v1.1"
+
+# ====================================
+# Anthropic API + Prompt Caching
+# ====================================
+anthropic_api:
+  model: "claude-sonnet-4-6"  # bilanciamento qualità/costo per agente analisi
+  max_tokens: 4096
+  
+  # Credenziali API: in vault, NON in chiaro
+  api_key_vault_key: "anthropic_api_key"
+  
+  # Prompt caching strategy
+  caching:
+    enabled: true
+    
+    # IMPORTANTE: TTL esplicito 1h (il default Anthropic post-marzo 2026 è 5min,
+    # non adatto al nostro caso d'uso con chiamate distanziate nel tempo)
+    ttl: "1h"
+    
+    # Breakpoint structure (3 cache breakpoints, 1 dinamico)
+    # Ordine OBBLIGATORIO dei moduli per stabilità della cache:
+    breakpoints:
+      - block: "core_agent"
+        cached: true
+        ttl: "1h"
+        # Più stabile, cambia solo per evoluzione filosofica agente
+      - block: "analytical_framework"
+        cached: true
+        ttl: "1h"
+        # Cambia per evoluzione algoritmo Meta (mensile/trimestrale)
+      - block: "client_profile_full"
+        cached: true
+        ttl: "1h"
+        # Cambia per evoluzioni cliente specifico
+      - block: "user_message"
+        cached: false
+        # Dati Meta del giorno + domanda Claudio: dinamici
+  
+  # Monitoring del caching
+  cache_monitoring:
+    enabled: true
+    log_metrics: true
+    target_read_write_ratio: 5.0  # >=5 reads per ogni write = sano
+    alert_threshold_ratio: 2.0    # <2 = qualcosa invalida la cache, indagare
+
+# ====================================
+# Note operative
+# ====================================
+# 1. Per cambiare cliente attivo: modificare active_client_profile + caricare 
+#    nuovo client_profile.md + benchmark.md
+# 2. Per aggiornare framework: aggiornare analytical_framework.md + bumpare versione qui
+# 3. Per aggiungere automation nuova: definirla nel client_profile.md sotto 
+#    operational_automations e bumpare versione client_profile

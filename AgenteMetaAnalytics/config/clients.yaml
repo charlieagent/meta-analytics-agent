@@ -1,0 +1,32 @@
+# Configurazione multi-cliente per n8n.
+# Questo file contiene solo riferimenti e metadati operativi, non credenziali.
+# I token/API key restano nelle variabili ambiente o nelle credenziali n8n.
+
+active_client: "frantoio_paparella"
+
+shared_files:
+  core_agent: "core/core_agent.md"
+  analytical_framework: "framework/analytical_framework.md"
+
+clients:
+  frantoio_paparella:
+    display_name: "Frantoio Paparella"
+    status: "active"
+
+    meta:
+      ad_account_env: "META_AD_ACCOUNT_ID_FRANTOIO"
+      token_env: "META_API_TOKEN_FRANTOIO"
+      operational_timezone: "Europe/Rome"
+      account_timezone: "America/Los_Angeles"
+      timezone_gap_policy: "hourly_reconstruction_to_operational_day"
+      currency: "EUR"
+
+    files:
+      client_profile: "client_profiles/frantoio_paparella/client_profile.md"
+      benchmark: "client_profiles/frantoio_paparella/benchmark_v1.md"
+
+    report:
+      daily_cron: "0 8 * * *"
+      daily_timezone: "Europe/Rome"
+      telegram_chat_env: "TELEGRAM_CHAT_ID_CLAUDIO"
+      email_to_env: "REPORT_EMAIL_CLAUDIO"
